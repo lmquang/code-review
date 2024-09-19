@@ -90,9 +90,9 @@ func handleReviewCommand() {
 
 	gitClient := git.NewClient()
 	diffFormatter := diff.NewFormatter(diff.SplitAndTrimPatterns(*ignoreFlag))
-	gptClient := gpt.NewClient(config.OpenAIAPIKey)
+	gptClient := gpt.NewOpenAIClient(config.OpenAIAPIKey)
 	if config.OpenAIModel != "" {
-		gptClient.SetModel(config.OpenAIModel)
+		gptClient.Client().SetModel(config.OpenAIModel)
 	}
 
 	diff, changedFiles, err := gitClient.GetDiff()

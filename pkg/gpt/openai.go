@@ -5,29 +5,27 @@ import (
 	"fmt"
 	"log"
 
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/sashabaranov/go-openai"
+
+	gptopenai "github.com/lmquang/code-review/pkg/gpt/openai"
 )
 
-// Client represents a GPT client
-type Client struct {
-	client *openai.Client
-	model  string
-}
-
-// NewClient creates a new GPT client
-func NewClient(apiKey string) *Client {
-	client := openai.NewClient(apiKey)
-	return &Client{
-		client: client,
-		model:  openai.GPT4oMini,
+// NewOpenAIClient creates a new GPT client
+func NewOpenAIClient(apiKey string) IGPT {
+	return &gpt{
+		client: gptopenai.NewOpenAI(openai.NewClient(apiKey), openai.GPT4oMini),
 	}
 }
 
+func (c *gpt) Client() gptopenai.IOpenAI {
+	return c.client
+}
+
 // Review sends the formatted diff to GPT for review
-func (c *Client) Review(formattedDiff string) (string, error) {
+func (c *gpt) Review(formattedDiff string) (string, error) {
 	prompt := `You are an AI assistant tasked with reviewing code changes based on a git diff output. Your goal is to ensure the code follows the existing style and conventions of the codebase, while also suggesting improvements to align with best practices. Follow these instructions to complete the review:
 
-1. First, you will be provided with the git diff output in XML format: <git_diff>{{CODE_DIFF}}</git_diff>
+1. First, you will be provided with the git diff output in XML format: <git-dif>{{CODE_DIFF}}</git-dif>
 
 2. Detect language in the code changes
 
@@ -65,17 +63,22 @@ func (c *Client) Review(formattedDiff string) (string, error) {
    </summary>
 
    <suggest_changes>
-	[List files and lines where changes are suggested, along with the recommended modifications]
+	[List files and lines where changes are suggested, along with the recommended modifications, make sure file is not duplicated for each recommendation] as per the following example:
+	<file>
+		<name>file_name</name>
+		<line>line_number</line>
+		<change>proposed_change</change>
+	</file>
    </suggest_changes>
    </review>
 
 Remember to be constructive in your feedback and provide clear explanations for your suggestions. Focus on maintaining consistency with the existing codebase while promoting best practices for the specified programming language.`
 
-	log.Printf("Sending to GPT (%v)\n", c.model)
+	log.Printf("Sending %v characters to GPT (%v)\n", len(formattedDiff), c.client.GetModel())
 	resp, err := c.client.CreateChatCompletion(
 		context.Background(),
 		openai.ChatCompletionRequest{
-			Model: c.model,
+			Model: c.client.GetModel(),
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
@@ -95,8 +98,4 @@ Remember to be constructive in your feedback and provide clear explanations for 
 	}
 
 	return resp.Choices[0].Message.Content, nil
-}
-
-func (c *Client) SetModel(model string) {
-	c.model = model
 }

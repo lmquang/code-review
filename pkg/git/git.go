@@ -11,7 +11,7 @@ import (
 type Client struct{}
 
 // NewClient creates a new Git client
-func NewClient() *Client {
+func NewClient() IGit {
 	return &Client{}
 }
 
@@ -22,24 +22,30 @@ func (c *Client) GetDiff() (string, []string, error) {
 		return "", nil, fmt.Errorf("failed to get current branch: %v", err)
 	}
 
-	parentBranch, err := c.ExecCommand("git", "rev-parse", "--abbrev-ref", "@{-1}")
+	// Get the branch that the current branch was checked out from
+	baseBranch, err := c.ExecCommand("git", "rev-parse", "--abbrev-ref", "@{u}")
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to determine parent branch: %v", err)
+		// If there's an error (e.g., no upstream branch), fallback to 'develop'
+		baseBranch = "develop"
+	} else {
+		// The result will be in the format 'origin/branch', so we need to remove 'origin/'
+		baseBranch = strings.TrimPrefix(baseBranch, "origin/")
 	}
 
-	branchPoint, err := c.ExecCommand("git", "merge-base", currentBranch, parentBranch)
+	fmt.Printf("Comparing %s against %s\n", currentBranch, baseBranch)
+
+	// Find the merge-base (common ancestor) of the current branch and the base branch
+	mergeBase, err := c.ExecCommand("git", "merge-base", currentBranch, baseBranch)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to find branch point: %v", err)
+		return "", nil, fmt.Errorf("failed to find merge base: %v", err)
 	}
 
-	fmt.Printf("Comparing %s against %s from branch point %s\n", currentBranch, parentBranch, branchPoint[:7])
-
-	changedFiles, err := c.ExecCommand("git", "diff", "--name-only", branchPoint, currentBranch)
+	changedFiles, err := c.ExecCommand("git", "diff", "--name-only", mergeBase, currentBranch)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get list of changed files: %v", err)
 	}
 
-	diff, err := c.ExecCommand("git", "diff", branchPoint, currentBranch)
+	diff, err := c.ExecCommand("git", "diff", mergeBase, currentBranch)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to execute git diff: %v", err)
 	}

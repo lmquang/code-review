@@ -2,6 +2,7 @@ package diff
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/lmquang/code-review/pkg/git"
@@ -10,11 +11,11 @@ import (
 // Formatter represents a diff formatter
 type Formatter struct {
 	ignoredPatterns []string
-	gitClient       *git.Client
+	gitClient       git.IGit
 }
 
 // NewFormatter creates a new diff formatter
-func NewFormatter(ignoredPatterns []string) *Formatter {
+func NewFormatter(ignoredPatterns []string) IDiff {
 	return &Formatter{
 		ignoredPatterns: ignoredPatterns,
 		gitClient:       git.NewClient(),
@@ -47,7 +48,7 @@ func (f *Formatter) Format(diff string, changedFiles []string) (string, []error)
 		}
 
 		formattedDiff.WriteString("  <file>\n")
-		formattedDiff.WriteString(fmt.Sprintf("    <name>%s</name>\n", f.escapeXML(fileName)))
+		formattedDiff.WriteString(fmt.Sprintf("    <n>%s<n>\n", f.escapeXML(fileName)))
 
 		branchPoint, err := f.gitClient.ExecCommand("git", "merge-base", "HEAD", "@{-1}")
 		if err != nil {
@@ -86,12 +87,14 @@ func (f *Formatter) cleanFilePath(path string) string {
 // shouldIgnoreFile checks if a file should be ignored based on the ignore patterns
 func (f *Formatter) shouldIgnoreFile(fileName string) bool {
 	for _, pattern := range f.ignoredPatterns {
-		if strings.HasPrefix(pattern, "*") {
-			if strings.HasSuffix(fileName, strings.TrimPrefix(pattern, "*")) {
-				return true
-			}
-		} else {
-			if fileName == pattern {
+		matched, err := filepath.Match(pattern, fileName)
+		if err == nil && matched {
+			return true
+		}
+		// If the pattern doesn't contain a separator, also check against the base name
+		if !strings.Contains(pattern, string(filepath.Separator)) {
+			matched, err = filepath.Match(pattern, filepath.Base(fileName))
+			if err == nil && matched {
 				return true
 			}
 		}
