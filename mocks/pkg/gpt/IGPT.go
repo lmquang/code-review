@@ -32,9 +32,9 @@ func (_m *IGPT) Client() openai.IOpenAI {
 	return r0
 }
 
-// Review provides a mock function with given fields: formattedDiff
-func (_m *IGPT) Review(formattedDiff string) (string, error) {
-	ret := _m.Called(formattedDiff)
+// Review provides a mock function with given fields: originalContent, formattedDiff
+func (_m *IGPT) Review(originalContent string, formattedDiff string) (string, error) {
+	ret := _m.Called(originalContent, formattedDiff)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Review")
@@ -42,17 +42,17 @@ func (_m *IGPT) Review(formattedDiff string) (string, error) {
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string) (string, error)); ok {
-		return rf(formattedDiff)
+	if rf, ok := ret.Get(0).(func(string, string) (string, error)); ok {
+		return rf(originalContent, formattedDiff)
 	}
-	if rf, ok := ret.Get(0).(func(string) string); ok {
-		r0 = rf(formattedDiff)
+	if rf, ok := ret.Get(0).(func(string, string) string); ok {
+		r0 = rf(originalContent, formattedDiff)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(formattedDiff)
+	if rf, ok := ret.Get(1).(func(string, string) error); ok {
+		r1 = rf(originalContent, formattedDiff)
 	} else {
 		r1 = ret.Error(1)
 	}
