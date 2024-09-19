@@ -5,7 +5,7 @@ import (
 )
 
 type IGPT interface {
-	Review(formattedDiff string) (string, error)
+	Review(originalContent, formattedDiff string) (string, error)
 	Client() gptopenai.IOpenAI
 }
 

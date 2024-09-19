@@ -22,14 +22,16 @@ func NewFormatter(ignoredPatterns []string) IDiff {
 	}
 }
 
-// Format prepares the git diff output for AI model review in XML format
-func (f *Formatter) Format(diff string, changedFiles []string) (string, []error) {
+// Format prepares the git diff output for AI model review, separating original content and diff content
+func (f *Formatter) Format(diff string, changedFiles []string) (string, string, []error) {
 	fileChanges := strings.Split(diff, "diff --git")
 
-	var formattedDiff strings.Builder
+	var originalContent strings.Builder
+	var diffContent strings.Builder
 	var errors []error
 
-	formattedDiff.WriteString("<git-diff>\n")
+	originalContent.WriteString("<original-content>\n")
+	diffContent.WriteString("<git-diff>\n")
 
 	for _, change := range fileChanges {
 		if change == "" {
@@ -47,8 +49,9 @@ func (f *Formatter) Format(diff string, changedFiles []string) (string, []error)
 			continue
 		}
 
-		formattedDiff.WriteString("  <file>\n")
-		formattedDiff.WriteString(fmt.Sprintf("    <n>%s<n>\n", f.escapeXML(fileName)))
+		originalContent.WriteString(fmt.Sprintf("  <file path=\"%s\">\n", f.escapeXML(fileName)))
+		diffContent.WriteString("  <file>\n")
+		diffContent.WriteString(fmt.Sprintf("    <name>%s</name>\n", f.escapeXML(fileName)))
 
 		branchPoint, err := f.gitClient.ExecCommand("git", "merge-base", "HEAD", "@{-1}")
 		if err != nil {
@@ -56,25 +59,26 @@ func (f *Formatter) Format(diff string, changedFiles []string) (string, []error)
 			continue
 		}
 
-		originalContent, err := f.gitClient.GetFileContentAtBranchPoint(fileName, branchPoint)
+		fileContent, err := f.gitClient.GetFileContentAtBranchPoint(fileName, branchPoint)
 		if err != nil {
 			errors = append(errors, fmt.Errorf("failed to get original content for %s: %v", fileName, err))
-			formattedDiff.WriteString("    <original-content>Unable to retrieve</original-content>\n")
+			originalContent.WriteString("    Unable to retrieve original content\n")
 		} else {
-			formattedDiff.WriteString("    <original-content>\n")
-			formattedDiff.WriteString(fmt.Sprintf("      <![CDATA[%s]]>\n", originalContent))
-			formattedDiff.WriteString("    </original-content>\n")
+			originalContent.WriteString(fmt.Sprintf("    <![CDATA[%s]]>\n", fileContent))
 		}
 
-		formattedDiff.WriteString("    <changes>\n")
-		formattedDiff.WriteString(fmt.Sprintf("      <![CDATA[%s]]>\n", change))
-		formattedDiff.WriteString("    </changes>\n")
-		formattedDiff.WriteString("  </file>\n")
+		diffContent.WriteString("    <changes>\n")
+		diffContent.WriteString(fmt.Sprintf("      <![CDATA[%s]]>\n", change))
+		diffContent.WriteString("    </changes>\n")
+
+		originalContent.WriteString("  </file>\n")
+		diffContent.WriteString("  </file>\n")
 	}
 
-	formattedDiff.WriteString("</git-diff>")
+	originalContent.WriteString("</original-content>")
+	diffContent.WriteString("</git-diff>")
 
-	return formattedDiff.String(), errors
+	return originalContent.String(), diffContent.String(), errors
 }
 
 // cleanFilePath removes the 'a/' and 'b/' prefixes from the file path

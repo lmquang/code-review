@@ -105,7 +105,7 @@ func handleReviewCommand() {
 		return
 	}
 
-	formattedDiff, errors := diffFormatter.Format(diff, changedFiles)
+	originalContent, formattedDiff, errors := diffFormatter.Format(diff, changedFiles)
 	if len(errors) > 0 {
 		fmt.Println("Encountered errors while processing some files:")
 		for _, err := range errors {
@@ -119,7 +119,7 @@ func handleReviewCommand() {
 		return
 	}
 
-	gptResponse, err := gptClient.Review(formattedDiff)
+	gptResponse, err := gptClient.Review(originalContent, formattedDiff)
 	if err != nil {
 		log.Fatalf("Error sending to GPT: %v", err)
 	}

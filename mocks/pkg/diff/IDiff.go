@@ -10,7 +10,7 @@ type IDiff struct {
 }
 
 // Format provides a mock function with given fields: _a0, changedFiles
-func (_m *IDiff) Format(_a0 string, changedFiles []string) (string, []error) {
+func (_m *IDiff) Format(_a0 string, changedFiles []string) (string, string, []error) {
 	ret := _m.Called(_a0, changedFiles)
 
 	if len(ret) == 0 {
@@ -18,8 +18,9 @@ func (_m *IDiff) Format(_a0 string, changedFiles []string) (string, []error) {
 	}
 
 	var r0 string
-	var r1 []error
-	if rf, ok := ret.Get(0).(func(string, []string) (string, []error)); ok {
+	var r1 string
+	var r2 []error
+	if rf, ok := ret.Get(0).(func(string, []string) (string, string, []error)); ok {
 		return rf(_a0, changedFiles)
 	}
 	if rf, ok := ret.Get(0).(func(string, []string) string); ok {
@@ -28,15 +29,21 @@ func (_m *IDiff) Format(_a0 string, changedFiles []string) (string, []error) {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, []string) []error); ok {
+	if rf, ok := ret.Get(1).(func(string, []string) string); ok {
 		r1 = rf(_a0, changedFiles)
 	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).([]error)
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func(string, []string) []error); ok {
+		r2 = rf(_a0, changedFiles)
+	} else {
+		if ret.Get(2) != nil {
+			r2 = ret.Get(2).([]error)
 		}
 	}
 
-	return r0, r1
+	return r0, r1, r2
 }
 
 // NewIDiff creates a new instance of IDiff. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
