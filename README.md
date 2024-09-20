@@ -52,6 +52,25 @@ Or use the shorthand:
 code-review r
 ```
 
+## Where to Run the Tool
+
+The Code Review Tool is designed to be run from the root directory of your Git repository. Here's how to use it effectively:
+
+1. Navigate to the root directory of your Git repository in the terminal.
+2. Ensure you have uncommitted changes or differences between your current branch and the target branch (e.g., main or master).
+3. Run the tool using one of the following commands:
+   ```
+   code-review review
+   ```
+   or
+   ```
+   code-review r
+   ```
+
+The tool will analyze the differences between your current branch and the target branch, providing AI-powered feedback on your code changes.
+
+Note: The tool works best when run on branches with focused, related changes. For large-scale reviews or changes across many files, consider breaking your work into smaller, more manageable pull requests.
+
 ## Configuration
 
 You can configure the OpenAI API key and model using the `set` command:
