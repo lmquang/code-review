@@ -57,7 +57,7 @@ code-review r
 The Code Review Tool is designed to be run from the root directory of your Git repository. Here's how to use it effectively:
 
 1. Navigate to the root directory of your Git repository in the terminal.
-2. Ensure you have uncommitted changes or differences between your current branch and the target branch (e.g., main or master).
+2. Ensure you have committed changes or differences between your current branch and the target branch (e.g., main or master).
 3. Run the tool using one of the following commands:
    ```
    code-review review
